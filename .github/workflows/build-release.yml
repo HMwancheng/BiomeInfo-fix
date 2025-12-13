@@ -1,13 +1,13 @@
 name: Build and Release Mod
 
 on:
-  workflow_dispatch: # 允许你在 Actions 页面手动点击按钮触发
+  workflow_dispatch:
   push:
-    tags:
-      - "main" # 当你推送类似 v1.0.0 的标签时自动触发发布
+    branches:            # <--- 这里从 tags 改为 branches
+      - "1.21.6-fix"     # <--- 这里写你的分支名
 
 permissions:
-  contents: write # 赋予 Action 创建 Release 的权限
+  contents: write
 
 jobs:
   build:
@@ -21,31 +21,22 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21' # Minecraft 1.20.5+ (1.21) 需要 Java 21
+          java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4 # 自动处理 Gradle 缓存和 Wrapper
-        
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Grant Execute Permission
         run: chmod +x gradlew
 
       - name: Build with Gradle
         run: ./gradlew build
 
-      # 可选：清理不需要的文件 (源码包和开发包)，只保留主模组 Jar
-      # 如果你希望发布源码包，可以删除这一步
-      - name: Cleanup Artifacts
-        run: |
-          rm build/libs/*-dev.jar || true
-          rm build/libs/*-sources.jar || true
-          echo "Listing files to be released:"
-          ls -l build/libs/
-
-      # 创建 GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/') # 只有在推送标签时才执行发布
+        # if: startsWith(github.ref, 'refs/tags/')  <--- 删掉或注释掉这一行，因为现在我们是分支触发
         with:
-          files: build/libs/*.jar # 上传 build/libs 下剩余的所有 jar 文件
-          generate_release_notes: true # 自动生成更新日志
+          files: build/libs/*.jar
+          name: "Auto Build 1.21.6-fix"   # 发布标题
+          tag_name: "build-${{ github.run_number }}" # 必须指定一个 tag 名字，这里用构建序号自动命名
           make_latest: true
