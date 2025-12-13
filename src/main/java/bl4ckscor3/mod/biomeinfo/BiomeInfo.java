@@ -33,6 +33,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+// 新增的 imports
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.PreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
+
 public class BiomeInfo implements ClientModInitializer, IdentifiableResourceReloadListener {
 	public static final int MARGIN = 3;
 	static BiomeInfoConfig config;
@@ -112,24 +117,14 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 							Matrix3x2fStack pose = graphics.pose();
 							Window window = mc.getWindow();
 
-                            // --- 修改部分开始 ---
+                            // 这里的代码是我们之前修改过的，保持不变
 							pose.pushMatrix();
-                            
-                            // 1. 计算绝对坐标（基准 + 偏移 - 对齐修正）
                             float renderX = positionPreset.posX(window) - textOffset;
                             float renderY = positionPreset.posY(window, mc.font);
-
-                            // 2. 先移动原点到目标位置
                             pose.translate(renderX, renderY, 0);
-                            
-                            // 3. 原地缩放
 							pose.scale(scale, scale);
-                            
-                            // 4. 在局部坐标 (0,0) 处绘制文字
 							graphics.drawString(mc.font, biomeName, 0, 0, config.color | (alpha << 24), config.textShadow);
-							
-                            pose.popMatrix();
-                            // --- 修改部分结束 ---
+							pose.popMatrix();
 						});
 					}
 				}
@@ -200,10 +195,12 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 		//@formatter:on
 	}
 
+    // --- 修复的方法开始 ---
 	@Override
-	public CompletableFuture<Void> reload(SharedState sharedState, Executor executor, PreparationBarrier preparationBarrier, Executor executor2) {
-		return CompletableFuture.runAsync(NAME_CACHE::clear, executor).thenCompose(preparationBarrier::wait);
+	public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier preparationBarrier, ResourceManager resourceManager, ProfilerFiller preparationsProfiler, ProfilerFiller reloadProfiler, Executor backgroundExecutor, Executor gameExecutor) {
+		return CompletableFuture.runAsync(NAME_CACHE::clear, gameExecutor).thenCompose(preparationBarrier::wait);
 	}
+    // --- 修复的方法结束 ---
 
 	@Override
 	public ResourceLocation getFabricId() {
