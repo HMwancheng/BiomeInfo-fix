@@ -1,15 +1,5 @@
 package bl4ckscor3.mod.biomeinfo;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-
-import org.apache.commons.lang3.StringUtils;
-import org.joml.Matrix3x2fStack;
-
-import com.mojang.blaze3d.platform.Window;
-
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.JanksonConfigSerializer;
@@ -31,9 +21,17 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.biome.Biome;
+import org.apache.commons.lang3.StringUtils;
+import org.joml.Matrix3x2fStack;
+
+import com.mojang.blaze3d.platform.Window;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 public class BiomeInfo implements ClientModInitializer, IdentifiableResourceReloadListener {
 	public static final int MARGIN = 3;
@@ -114,10 +112,24 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 							Matrix3x2fStack pose = graphics.pose();
 							Window window = mc.getWindow();
 
+                            // --- 修改部分开始 ---
 							pose.pushMatrix();
+                            
+                            // 1. 计算绝对坐标（基准 + 偏移 - 对齐修正）
+                            float renderX = positionPreset.posX(window) - textOffset;
+                            float renderY = positionPreset.posY(window, mc.font);
+
+                            // 2. 先移动原点到目标位置
+                            pose.translate(renderX, renderY, 0);
+                            
+                            // 3. 原地缩放
 							pose.scale(scale, scale);
-							graphics.drawString(mc.font, biomeName, positionPreset.posX(window) - textOffset, positionPreset.posY(window, mc.font), config.color | (alpha << 24), config.textShadow);
-							pose.popMatrix();
+                            
+                            // 4. 在局部坐标 (0,0) 处绘制文字
+							graphics.drawString(mc.font, biomeName, 0, 0, config.color | (alpha << 24), config.textShadow);
+							
+                            pose.popMatrix();
+                            // --- 修改部分结束 ---
 						});
 					}
 				}
@@ -189,7 +201,7 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 	}
 
 	@Override
-	public CompletableFuture<Void> reload(PreparationBarrier preparationBarrier, ResourceManager resourceManager, Executor executor, Executor executor2) {
+	public CompletableFuture<Void> reload(SharedState sharedState, Executor executor, PreparationBarrier preparationBarrier, Executor executor2) {
 		return CompletableFuture.runAsync(NAME_CACHE::clear, executor).thenCompose(preparationBarrier::wait);
 	}
 
