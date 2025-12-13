@@ -11,7 +11,8 @@ import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.gui.Font;
 
 public enum PositionPreset {
-	NONE(window -> BiomeInfo.config.posX, (window, font) -> BiomeInfo.config.posY, () -> BiomeInfo.config.textAlignment),
+    // 修改点1：将 NONE 的基准值改为 0，这样最终结果就是 0 + config.posX
+	NONE(window -> 0, (window, font) -> 0, () -> BiomeInfo.config.textAlignment),
 	TOP_LEFT(window -> MARGIN, (window, font) -> MARGIN, () -> TextAlignment.LEFT),
 	TOP_MIDDLE(window -> window.getGuiScaledWidth() / 2, (window, font) -> MARGIN, () -> TextAlignment.MIDDLE),
 	TOP_RIGHT(window -> window.getGuiScaledWidth() - MARGIN, (window, font) -> MARGIN, () -> TextAlignment.RIGHT),
@@ -40,11 +41,13 @@ public enum PositionPreset {
 	}
 
 	public int posX(Window window) {
-		return xGetter.applyAsInt(window);
+        // 修改点2：加上配置文件的偏移量
+		return xGetter.applyAsInt(window) + BiomeInfo.config.posX;
 	}
 
 	public int posY(Window window, Font font) {
-		return yGetter.applyAsInt(window, font);
+        // 修改点3：加上配置文件的偏移量
+		return yGetter.applyAsInt(window, font) + BiomeInfo.config.posY;
 	}
 
 	public TextAlignment textAlignment() {
