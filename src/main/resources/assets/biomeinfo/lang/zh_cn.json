@@ -1,0 +1,35 @@
+{
+  "text.autoconfig.biomeinfo.title": "Biome Info 配置",
+  "text.autoconfig.biomeinfo.option.enabled": "启用模组",
+  "text.autoconfig.biomeinfo.option.posX": "X 轴偏移",
+  "text.autoconfig.biomeinfo.option.posY": "Y 轴偏移",
+  "text.autoconfig.biomeinfo.option.scale": "文字大小",
+  "text.autoconfig.biomeinfo.option.textShadow": "文字阴影",
+  "text.autoconfig.biomeinfo.option.color": "文字颜色",
+  "text.autoconfig.biomeinfo.option.fadeIn": "淡入动画",
+  "text.autoconfig.biomeinfo.option.fadeOut": "淡出动画",
+  "text.autoconfig.biomeinfo.option.displayTime": "显示时长 (Ticks)",
+  "text.autoconfig.biomeinfo.option.hideWithUI": "按 F1 时隐藏",
+  "text.autoconfig.biomeinfo.option.hideOnDebugScreen": "打开 F3 时隐藏",
+  "text.autoconfig.biomeinfo.option.fallbackOnUntranslatableName": "无汉化时显示英文",
+  "text.autoconfig.biomeinfo.option.appendModName": "显示所属模组名",
+  "text.autoconfig.biomeinfo.option.positionPreset": "预设位置",
+  
+  "text.autoconfig.biomeinfo.option.delayTicks": "防抖延迟 (Ticks)",
+  "text.autoconfig.biomeinfo.option.delayTicks.@Tooltip": "在群系停留多久才显示标题，\n防止路过小群系时频繁弹出。",
+  
+  "text.autoconfig.biomeinfo.option.historySize": "历史记录数量",
+  "text.autoconfig.biomeinfo.option.historySize.@Tooltip": "记住最近的群系，\n在这些群系间往返不会重复显示标题。",
+  
+  "text.autoconfig.biomeinfo.option.showDimension": "显示维度名称",
+  "text.autoconfig.biomeinfo.option.showDimension.@Tooltip": "是否在群系名旁显示维度 (如：主世界)。",
+  
+  "text.autoconfig.biomeinfo.option.dimensionShowOnWorldChangeOnly": "仅切换维度时显示",
+  "text.autoconfig.biomeinfo.option.dimensionShowOnWorldChangeOnly.@Tooltip": "开启：只在刚进入该维度时显示一次。\n关闭：每次显示群系名时都显示维度。",
+  
+  "text.autoconfig.biomeinfo.option.dimensionDelayTicks": "维度显示延迟",
+  "text.autoconfig.biomeinfo.option.dimensionBelow": "显示在下方",
+  "text.autoconfig.biomeinfo.option.dimensionScale": "维度文字大小",
+  "text.autoconfig.biomeinfo.option.dimensionYOffset": "垂直间距",
+  "text.autoconfig.biomeinfo.option.dimensionColor": "维度文字颜色"
+}
