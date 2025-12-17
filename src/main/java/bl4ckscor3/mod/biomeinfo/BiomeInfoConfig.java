@@ -2,56 +2,50 @@ package bl4ckscor3.mod.biomeinfo;
 
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry.ColorPicker;
-import me.shedaniel.cloth.clothconfig.shadowed.blue.endless.jankson.Comment;
+import me.shedaniel.autoconfig.annotation.ConfigEntry;
 
 @Config(name = "biomeinfo")
 public class BiomeInfoConfig implements ConfigData {
-	//@formatter:off
-	@Comment("true if the biome info should be shown, false otherwise")
-	boolean enabled = true;
+    public boolean enabled = true;
+    public int posX = 10;
+    public int posY = 10;
+    public double scale = 1.0;
+    public boolean textShadow = true;
+    public int color = 0xFFFFFF;
+    public boolean fadeIn = true;
+    public boolean fadeOut = true;
+    public int displayTime = 40;
+    public boolean hideWithUI = true;
+    public boolean hideOnDebugScreen = true;
+    public boolean fallbackOnUntranslatableName = true;
+    public boolean appendModName = true;
+    
+    @ConfigEntry.Gui.CollapsibleObject
+    public PositionPreset positionPreset = PositionPreset.TOP_LEFT;
 
-	@Comment("true if the biome info should fade out shortly after a different biome has been entered. If this is set to false, the biome info will stay visible")
-	boolean fadeOut = true;
+    // --- 新增功能：基础配置 ---
+    
+    @ConfigEntry.Gui.Tooltip(count = 2) // 鼠标悬停提示
+    public int delayTicks = 10; // 防抖延迟：在群系停留多久才显示 (Ticks)
 
-	@Comment("true if the biome info should fade in when a different biome has been entered")
-	boolean fadeIn = true;
+    @ConfigEntry.Gui.Tooltip(count = 2)
+    public int historySize = 3; // 记忆功能：记住最近多少个群系不再重复显示
 
-	@Comment("How long in ticks (20 ticks = 1 second) to display the biome info, if fadeOut = true. If fadeIn = true, the time will be counted from the moment the biome info has finished fading in.")
-	int displayTime = 30;
+    // --- 新增功能：维度显示配置 ---
 
-	@Comment("The X position to display the biome info at")
-	int posX = 3;
+    @ConfigEntry.Gui.Tooltip
+    public boolean showDimension = true; // 是否显示维度名称
 
-	@Comment("The Y position to display the biome info at")
-	int posY = 3;
+    @ConfigEntry.Gui.Tooltip(count = 3)
+    public boolean dimensionShowOnWorldChangeOnly = false; // true=只在刚切换维度时显示一次，false=每次换群系都显示
 
-	@Comment("The size of the biome info (multiplier)")
-	double scale = 1.0D;
+    public int dimensionDelayTicks = 20; // 维度文字延迟显示时间 (相对于主标题弹出后)
 
-	@Comment("true if the biome info should be rendered with a shadow, false otherwise")
-	boolean textShadow = true;
-
-	@Comment("The color to display the biome info in (Format: 0xRRGGBB)")
-	@ColorPicker
-	int color = 0xFFFFFF;
-
-	@Comment("If true, hides the mod's info text when the debug screen (F3) is open.")
-	boolean hideOnDebugScreen = true;
-
-	@Comment("If true, hides the mod's info text when the game's UI is also hidden (F1).")
-	boolean hideWithUI = true;
-
-	@Comment("If true, will automatically fromat biome names that do not have a proper translation into an English name.")
-	boolean fallbackOnUntranslatableName = true;
-
-	@Comment("If true, will append the mod name the biome is from to the biome name.")
-	boolean appendModName = false;
-
-	@Comment("The text alignment of the biome info.")
-	TextAlignment textAlignment = TextAlignment.LEFT;
-
-	@Comment("This lets BiomeInfo automatically determine the correct position of the text without needing to change the posX, posY, or textAlignment configuration settings manually.\n" +
-			"If this is set to NONE, then BiomeInfo will use those configuration settings. If this is set to anything other than NONE, they will be ignored.")
-	PositionPreset positionPreset = PositionPreset.TOP_LEFT;
+    public boolean dimensionBelow = true; // true=显示在下方，false=显示在上方
+    public double dimensionScale = 0.8;   // 维度文字缩放倍率
+    public int dimensionYOffset = 2;      // 与主标题的垂直间距
+    public int dimensionColor = 0xFFFFFF; // 维度文字颜色
+    
+    // 兼容旧代码，如果没有 TextAlignment 枚举的配置，可以忽略，因为由 PositionPreset 控制
+    public TextAlignment textAlignment = TextAlignment.LEFT; 
 }
