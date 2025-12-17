@@ -40,16 +40,26 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
     public static final int MARGIN = 3;
     static BiomeInfoConfig config;
 
-    private ResourceKey<Biome> currentDisplayedKey = null;
+    // --- 核心状态变量 ---
+    // [逻辑] 当前已经确认所在的群系 (用于判断是否发生了变化)
+    private ResourceKey<Biome> currentConfirmedKey = null;
+    
+    // [视觉] 当前屏幕上正在渲染的群系 (用于绘制文字)
+    private ResourceKey<Biome> renderingKey = null;
+
+    // [防抖] 临时检测到的群系
     private ResourceKey<Biome> pendingKey = null;
     private int pendingTime = 0;
     
+    // 历史记录
     private final Deque<ResourceKey<Biome>> biomeHistory = new ArrayDeque<>();
     
+    // 动画状态
     private int displayTime = 0;
     private int alpha = 0;
     private boolean fadingIn = false;
 
+    // 维度显示逻辑
     private ResourceKey<Level> lastDisplayedDimension = null;
     private boolean isDimensionVisibleForCurrentBiome = false;
     private int currentBiomeLifeTime = 0;
@@ -69,6 +79,7 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             if (client.level == null || client.player == null) return;
 
+            // 1. 获取当前数据
             BlockPos pos = client.getCameraEntity().blockPosition();
             if (!client.level.isLoaded(pos)) return;
             
@@ -80,6 +91,7 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
             ResourceKey<Biome> actualCurrentKey = optionalKey.get();
             ResourceKey<Level> currentDimension = client.level.dimension();
 
+            // 2. 防抖逻辑
             if (!Objects.equals(pendingKey, actualCurrentKey)) {
                 pendingKey = actualCurrentKey;
                 pendingTime = 0;
@@ -87,20 +99,38 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                 pendingTime++;
             }
 
-            if (pendingTime >= config.delayTicks && !Objects.equals(currentDisplayedKey, pendingKey)) {
+            // 3. 确认显示逻辑 (Trigger Logic)
+            // 只有当群系发生变化 (相对于 currentConfirmedKey) 且停留时间足够时触发
+            if (pendingTime >= config.delayTicks && !Objects.equals(currentConfirmedKey, pendingKey)) {
                 
-                if (!biomeHistory.contains(pendingKey)) {
-                    // --- 新群系：正常显示 ---
-                    currentDisplayedKey = pendingKey;
-                    
-                    biomeHistory.addFirst(pendingKey);
-                    if (biomeHistory.size() > config.historySize) {
-                        biomeHistory.removeLast();
-                    }
+                // 立即更新逻辑位置，防止下一次 Tick 重复进入此代码块
+                currentConfirmedKey = pendingKey;
 
-                    boolean dimChanged = !Objects.equals(currentDimension, lastDisplayedDimension);
+                // 判断是否切换了维度 (修复问题2：维度横跳不显示)
+                boolean dimChanged = !Objects.equals(currentDimension, lastDisplayedDimension);
+
+                // 判断是否在历史记录中
+                boolean inHistory = biomeHistory.contains(pendingKey);
+
+                // 更新历史记录
+                // 即使在历史中也要重新加入(移到队头)，保证它是“最近”的
+                if (inHistory) {
+                    biomeHistory.remove(pendingKey); 
+                }
+                biomeHistory.addFirst(pendingKey);
+                if (biomeHistory.size() > config.historySize) {
+                    biomeHistory.removeLast();
+                }
+
+                // 核心决策：显示还是静默？
+                // 如果是 (不在历史中) 或者 (维度发生了变化)，则强制显示
+                if (!inHistory || dimChanged) {
+                    // --- 触发新显示 ---
+                    renderingKey = pendingKey; // 更新视觉文字
+                    
                     lastDisplayedDimension = currentDimension;
 
+                    // 维度显示开关逻辑
                     if (config.showDimension) {
                         if (config.dimensionShowOnWorldChangeOnly) {
                             isDimensionVisibleForCurrentBiome = dimChanged;
@@ -111,8 +141,8 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                         isDimensionVisibleForCurrentBiome = false;
                     }
 
+                    // 重置动画
                     currentBiomeLifeTime = 0;
-
                     if (config.fadeIn) {
                         displayTime = 0;
                         alpha = 0;
@@ -121,32 +151,39 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                         displayTime = Math.max(0, config.displayTime);
                         alpha = 255;
                     }
+
                 } else {
-                    // --- 历史群系：强制隐藏 ---
-                    // 【修复】之前这里只是切换了 Key，导致渲染器用旧的 Time/Alpha 渲染了新的 Key
-                    // 现在强制将 Alpha 设为 0，相当于立刻关闭 HUD
-                    currentDisplayedKey = pendingKey;
-                    alpha = 0; 
+                    // --- 历史记录中：静默处理 ---
+                    // 修复问题1：直接消失无动画
+                    // 我们不更新 renderingKey，所以屏幕上还是旧的标题(如果有的话)
+                    // 我们只操作动画状态，让旧标题加速淡出
+                    
                     fadingIn = false;
-                    displayTime = 0;
-                    currentBiomeLifeTime = 0;
+                    displayTime = 0; // 强制结束停留时间，开始 Alpha 衰减
+                    
+                    // 注意：此时 renderingKey 仍然是上一个群系(C)
+                    // 屏幕上会显示 C 慢慢消失，而不是瞬间变成 B 然后消失，也不是瞬间消失
                 }
             }
             
+            // 累加生命周期 (用于维度延迟)
             if (alpha > 0) {
                 currentBiomeLifeTime++;
             }
 
+            // 4. 动画状态机 (Alpha 衰减/增加)
             if (!fadingIn) {
+                // 淡出阶段
                 if (!config.fadeOut && alpha != 255)
                     alpha = 255;
                 else if (config.fadeOut) {
                     if (displayTime > 0)
-                        displayTime--;
+                        displayTime--; // 停留期
                     else if (alpha > 0)
-                        alpha -= 10;
+                        alpha -= 10;   // 衰减期
                 }
-            } else {
+            } else { 
+                // 淡入阶段
                 alpha += 10;
                 if (alpha >= 255) {
                     fadingIn = false;
@@ -154,32 +191,35 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                     alpha = 255;
                 }
             }
+            
+            // 动画完全结束后，清理 renderingKey，避免残留引用
+            if (alpha <= 0) {
+                alpha = 0;
+                // 可选：renderingKey = null; 
+                // 但保留着也没事，反正 alpha 是 0 不会画出来
+            }
         });
 
+        // --- 渲染逻辑 ---
+        // 注意：这里全部使用 renderingKey 而不是 currentConfirmedKey
         HudElementRegistry.attachElementAfter(VanillaHudElements.TITLE_AND_SUBTITLE, ResourceLocation.fromNamespaceAndPath("biomeinfo", "overlay"), (graphics, delta) -> {
-            if (config.enabled && currentDisplayedKey != null && alpha > 0) {
+            if (config.enabled && renderingKey != null && alpha > 0) {
                 Minecraft mc = Minecraft.getInstance();
                 if (hideBecauseOfF1(mc) || hideBecauseOfF3(mc)) return;
 
-                Component biomeName = getBiomeName(currentDisplayedKey);
+                Component biomeName = getBiomeName(renderingKey);
                 
-                // 维度文字准备
+                // 维度文字
                 Component dimName = null;
-                // 【修复】计算维度文字的 Alpha
                 int dimAlpha = 0;
 
                 if (isDimensionVisibleForCurrentBiome && mc.level != null) {
-                    // 如果生命周期还没到延迟时间，Alpha = 0
                     if (currentBiomeLifeTime < config.dimensionDelayTicks) {
                         dimAlpha = 0;
                     } else {
-                        // 到了时间，计算淡入
-                        // 这里使用 25 的步进，大约 0.5 秒淡入完成 (10 ticks)
                         int fadeProgress = (currentBiomeLifeTime - config.dimensionDelayTicks) * 25;
-                        // 维度 Alpha 不能超过主标题 Alpha (防止主标题淡出时维度还亮着)
                         dimAlpha = Math.min(alpha, Math.min(255, fadeProgress));
                         
-                        // 只有当 dimAlpha > 0 时才去获取名字，节省性能
                         if (dimAlpha > 0) {
                             dimName = getDimensionName(mc.level.dimension().location());
                         }
@@ -205,7 +245,7 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                 graphics.drawString(mc.font, biomeName, -textOffset, 0, config.color | (alpha << 24), config.textShadow);
                 pose.popMatrix();
 
-                // 绘制副标题 (维度)
+                // 绘制副标题
                 if (dimName != null && dimAlpha > 0) {
                     pose.pushMatrix();
                     pose.scale(dimScale, dimScale);
@@ -218,7 +258,6 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
                         yOffset = -(mc.font.lineHeight + config.dimensionYOffset / dimScale); 
                     }
 
-                    // 【修复】使用 dimAlpha 而不是 alpha
                     graphics.drawString(mc.font, dimName, -dimOffset, (int)yOffset, config.dimensionColor | (dimAlpha << 24), config.textShadow);
                     
                     pose.popMatrix();
@@ -230,8 +269,8 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
         
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(this);
     }
-    
-    // ... (辅助方法保持不变，省略) ...
+
+    // --- 辅助方法 (保持不变) ---
     private static Component getBiomeName(ResourceKey<Biome> key) {
         return NAME_CACHE.computeIfAbsent(key, k -> {
             ResourceLocation location = key.location();
