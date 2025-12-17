@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-// 确保导入这些类
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 
@@ -112,20 +111,32 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 							Component biomeName = getBiomeName(key);
 							float scale = (float) config.scale;
 							PositionPreset positionPreset = config.positionPreset;
-							int textOffset = positionPreset.textAlignment().getNegativeOffset(mc.font, biomeName);
+							
+							// 获取当前的矩阵栈和窗口
 							Matrix3x2fStack pose = graphics.pose();
 							Window window = mc.getWindow();
 
 							pose.pushMatrix();
-                            float renderX = positionPreset.posX(window) - textOffset;
-                            float renderY = positionPreset.posY(window, mc.font);
-                            
-                            // 【修复1】Matrix3x2fStack 是 2D 矩阵，不能传 Z 坐标 (0)
-                            // 错误: pose.translate(renderX, renderY, 0);
-                            pose.translate(renderX, renderY);
-                            
+							
+							// 1. 计算基准坐标 (这是锚点，不包含对齐偏移)
+							float anchorX = positionPreset.posX(window);
+							float anchorY = positionPreset.posY(window, mc.font);
+
+							// 2. 先平移到锚点 (比如屏幕中心)
+							pose.translate(anchorX, anchorY);
+							
+							// 3. 然后进行缩放
 							pose.scale(scale, scale);
-							graphics.drawString(mc.font, biomeName, 0, 0, config.color | (alpha << 24), config.textShadow);
+							
+							// 4. 计算对齐修正 (局部坐标)
+							// getNegativeOffset 返回的是为了实现对齐需要向左移动的像素值
+							// LEFT: 返回 0, MIDDLE: 返回 宽度/2, RIGHT: 返回 宽度
+							int textOffset = positionPreset.textAlignment().getNegativeOffset(mc.font, biomeName);
+							
+							// 5. 在绘制时应用偏移。此时文字会相对于锚点 (0,0) 正确对齐
+							// 我们绘制在 (-textOffset, 0) 的位置
+							graphics.drawString(mc.font, biomeName, -textOffset, 0, config.color | (alpha << 24), config.textShadow);
+							
 							pose.popMatrix();
 						});
 					}
@@ -197,7 +208,6 @@ public class BiomeInfo implements ClientModInitializer, IdentifiableResourceRelo
 		//@formatter:on
 	}
 
-    // 【修复2】方法签名修正：1.21 只接受 4 个参数，不需要 Profiler
 	@Override
 	public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier preparationBarrier, ResourceManager resourceManager, Executor backgroundExecutor, Executor gameExecutor) {
 		return CompletableFuture.runAsync(NAME_CACHE::clear, gameExecutor).thenCompose(preparationBarrier::wait);
