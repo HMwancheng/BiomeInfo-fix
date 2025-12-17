@@ -12,8 +12,8 @@ public class BiomeInfoConfig implements ConfigData {
     public double scale = 1.0;
     public boolean textShadow = true;
 
-    // 【修复】添加 @Color 注解，恢复色盘选择器
-    @ConfigEntry.Color 
+    // 【修复】 改为 @ConfigEntry.ColorPicker
+    @ConfigEntry.ColorPicker 
     public int color = 0xFFFFFF;
 
     public boolean fadeIn = true;
@@ -24,17 +24,19 @@ public class BiomeInfoConfig implements ConfigData {
     public boolean fallbackOnUntranslatableName = true;
     public boolean appendModName = true;
     
-    // 删除 @CollapsibleObject，Cloth Config 会自动处理枚举
+    // Cloth Config 会自动处理枚举，无需额外注解，但为了美观可以保留 EnumHandler
     @ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON)
     public PositionPreset positionPreset = PositionPreset.TOP_LEFT;
 
+    // --- 新增功能：基础配置 ---
+    
     @ConfigEntry.Gui.Tooltip(count = 2)
     public int delayTicks = 10;
 
     @ConfigEntry.Gui.Tooltip(count = 2)
     public int historySize = 3;
 
-    // --- 维度显示配置 ---
+    // --- 新增功能：维度显示配置 ---
 
     @ConfigEntry.Gui.Tooltip
     public boolean showDimension = true;
@@ -48,8 +50,8 @@ public class BiomeInfoConfig implements ConfigData {
     public double dimensionScale = 0.8; 
     public int dimensionYOffset = 2;
 
-    // 【修复】添加 @Color 注解
-    @ConfigEntry.Color
+    // 【修复】 改为 @ConfigEntry.ColorPicker
+    @ConfigEntry.ColorPicker
     public int dimensionColor = 0xFFFFFF; 
     
     public TextAlignment textAlignment = TextAlignment.LEFT; 
