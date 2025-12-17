@@ -20,32 +20,34 @@ public class BiomeInfoConfig implements ConfigData {
     public boolean fallbackOnUntranslatableName = true;
     public boolean appendModName = true;
     
-    @ConfigEntry.Gui.CollapsibleObject
+    // 【修复点】删除了 @ConfigEntry.Gui.CollapsibleObject
+    // Cloth Config 会自动为 Enum 生成循环切换按钮，不需要额外注解
+    @ConfigEntry.Gui.EnumHandler(option = ConfigEntry.Gui.EnumHandler.EnumDisplayOption.BUTTON) // 可选：指定显示样式为按钮
     public PositionPreset positionPreset = PositionPreset.TOP_LEFT;
 
     // --- 新增功能：基础配置 ---
     
-    @ConfigEntry.Gui.Tooltip(count = 2) // 鼠标悬停提示
-    public int delayTicks = 10; // 防抖延迟：在群系停留多久才显示 (Ticks)
+    @ConfigEntry.Gui.Tooltip(count = 2)
+    public int delayTicks = 10;
 
     @ConfigEntry.Gui.Tooltip(count = 2)
-    public int historySize = 3; // 记忆功能：记住最近多少个群系不再重复显示
+    public int historySize = 3;
 
     // --- 新增功能：维度显示配置 ---
 
     @ConfigEntry.Gui.Tooltip
-    public boolean showDimension = true; // 是否显示维度名称
+    public boolean showDimension = true;
 
     @ConfigEntry.Gui.Tooltip(count = 3)
-    public boolean dimensionShowOnWorldChangeOnly = false; // true=只在刚切换维度时显示一次，false=每次换群系都显示
+    public boolean dimensionShowOnWorldChangeOnly = false;
 
-    public int dimensionDelayTicks = 20; // 维度文字延迟显示时间 (相对于主标题弹出后)
+    public int dimensionDelayTicks = 20;
 
-    public boolean dimensionBelow = true; // true=显示在下方，false=显示在上方
-    public double dimensionScale = 0.8;   // 维度文字缩放倍率
-    public int dimensionYOffset = 2;      // 与主标题的垂直间距
-    public int dimensionColor = 0xFFFFFF; // 维度文字颜色
+    public boolean dimensionBelow = true;
+    public double dimensionScale = 0.8; 
+    public int dimensionYOffset = 2;
+    public int dimensionColor = 0xFFFFFF;
     
-    // 兼容旧代码，如果没有 TextAlignment 枚举的配置，可以忽略，因为由 PositionPreset 控制
+    // 兼容字段，可以保留
     public TextAlignment textAlignment = TextAlignment.LEFT; 
 }
